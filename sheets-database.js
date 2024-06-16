@@ -1,25 +1,23 @@
-const fs = require('fs');
-const fs_async = require('fs').promises;
+const fs = require("fs");
+const fs_async = require("fs").promises;
 
-const path = require('path');
-const process = require('process');
-const {authenticate} = require('@google-cloud/local-auth');
-const {google} = require('googleapis');
-const {GoogleAuth} = require('google-auth-library');
+const path = require("path");
+const process = require("process");
+const { authenticate } = require("@google-cloud/local-auth");
+const { google } = require("googleapis");
+const { GoogleAuth } = require("google-auth-library");
 
 // If modifying these scopes, delete token.json and then refresh
-const SCOPES = ['https://www.googleapis.com/auth/spreadsheets']; //this scope for editing sheets. More scopes at https://developers.google.com/identity/protocols/oauth2/scopes#sheets
+const SCOPES = ["https://www.googleapis.com/auth/spreadsheets"]; //this scope for editing sheets. More scopes at https://developers.google.com/identity/protocols/oauth2/scopes#sheets
 
 // The file token.json stores the user's access and refresh tokens, and is
 // created automatically when the authorization flow completes for the first
 // time.
 
-const TOKEN_PATH = path.join(process.cwd(), 'token.json');
-const CREDENTIALS_PATH = path.join(process.cwd(), 'credentials.json');
+const TOKEN_PATH = path.join(process.cwd(), "token.json");
+const CREDENTIALS_PATH = path.join(process.cwd(), "credentials.json");
 
-
-
-const SHEET_ID_PATH = path.join(process.cwd(), 'sheet-id.json');
+const SHEET_ID_PATH = path.join(process.cwd(), "sheet-id.json");
 const id_file_content = fs.readFileSync(SHEET_ID_PATH);
 const sheet_ID = JSON.parse(id_file_content).sheet_id;
 
@@ -39,19 +37,12 @@ async function loadSavedCredentialsIfExist() {
   }
 }
 
-/**
- * Serializes credentials to a file compatible with GoogleAuth.fromJSON.
- *
- * @param {OAuth2Client} client
- * @return {Promise<void>}
- */
- 
 async function saveCredentials(client) {
   const content = await fs_async.readFile(CREDENTIALS_PATH);
   const keys = JSON.parse(content);
   const key = keys.installed || keys.web;
   const payload = JSON.stringify({
-    type: 'authorized_user',
+    type: "authorized_user",
     client_id: key.client_id,
     client_secret: key.client_secret,
     refresh_token: client.credentials.refresh_token,
@@ -70,7 +61,7 @@ async function authorize() {
     return client;
   }
   client = await authenticate({
-    access_type: 'offline',
+    access_type: "offline",
     scopes: SCOPES,
     keyfilePath: CREDENTIALS_PATH,
   });
@@ -81,36 +72,25 @@ async function authorize() {
   return client;
 }
 
-/**
- * Prints the names and majors of students in a sample spreadsheet:
- * @see https://docs.google.com/spreadsheets/d/1BxiMVs0XRA5nFMdKvBdBZjgmUUqptlbs74OgvE2upms/edit
- * @param {google.auth.OAuth2} auth The authenticated Google OAuth client.
- */
-
-
-
-const startColomn = 'A';
+const startColomn = "A";
 const counterStartValue = 2; //2 row - in the 1 colums name - wtf??
 
-async function getMessagesNumber(auth,sheetPage)
-{
-  const sheets = google.sheets({version: 'v4', auth});
+async function getMessagesNumber(auth, sheetPage) {
+  const sheets = google.sheets({ version: "v4", auth });
 
-  const counterCell = sheetPage + 'H3';
+  const counterCell = sheetPage + "H3";
 
   const result = await sheets.spreadsheets.values.get({
     spreadsheetId: sheet_ID,
-    range: counterCell, 
+    range: counterCell,
   });
 
   const messageCounter = Number(result.data.values);
   return messageCounter;
 }
 
-
-async function writeFeedback(auth,values, cell) 
-{
-  const sheets = google.sheets({version: 'v4', auth});
+async function writeFeedback(auth, values, cell) {
+  const sheets = google.sheets({ version: "v4", auth });
 
   const resource = {
     values,
@@ -120,15 +100,14 @@ async function writeFeedback(auth,values, cell)
 
   const result = await sheets.spreadsheets.values.update({
     spreadsheetId: sheet_ID,
-    range, 
-    valueInputOption: 'USER_ENTERED',
+    range,
+    valueInputOption: "USER_ENTERED",
     resource,
   });
 
-  console.log('%d cells updated.', result.data.updatedCells);
+  console.log("%d cells updated.", result.data.updatedCells);
   return result;
 }
-
 
 module.exports.authorize = authorize;
 module.exports.getMessagesNumber = getMessagesNumber;
